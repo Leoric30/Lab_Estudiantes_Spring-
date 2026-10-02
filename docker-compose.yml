@@ -1,0 +1,57 @@
+services:
+  # SERVICIO 1: Motor de base de datos PostgreSQL 16
+  db:
+    image: postgres:16-alpine
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"            # Expuesto para DBeaver / VS Code
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - red-laboratorio
+
+  # SERVICIO 2: API REST con Spring Boot
+  backend:
+    build: ./backend
+    container_name: springboot_api
+    environment:
+      DB_HOST: db              # ← nombre del servicio, NO localhost
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "8080:8080"            # Expuesto para probar la API con Postman / curl
+    depends_on:
+      db:
+        condition: service_healthy   # Espera a que PostgreSQL esté listo
+    networks:
+      - red-laboratorio
+
+  # SERVICIO 3: Interfaz React servida por Nginx
+  frontend:
+    build: ./frontend
+    container_name: react_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - red-laboratorio
+
+volumes:
+  db_data:
+
+networks:
+  red-laboratorio:
+    driver: bridge

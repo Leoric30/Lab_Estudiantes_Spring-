@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: students
+  datasource:
+    # El host por defecto es "db": el nombre del servicio en docker-compose.yml
+    url: jdbc:postgresql://${DB_HOST:db}:${DB_PORT:5432}/${DB_NAME:spring_db}
+    username: ${DB_USER:spring_user}
+    password: ${DB_PASSWORD:spring_password}
+  jpa:
+    hibernate:
+      ddl-auto: validate   # Flyway crea el esquema; Hibernate solo lo valida
+    open-in-view: false
+  flyway:
+    enabled: true
+  data:
+    web:
+      pageable:
+        max-page-size: 100
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
